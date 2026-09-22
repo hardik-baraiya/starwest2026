@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "test": "mocha test/pathCoverage/**/*.spec.js --require test/pathCoverage/hooks.js --reporter mochawesome --reporter-options reportDir=test/pathCoverage/mochawesome-report --timeout 10000 --exit"
   },
   "license": "MIT",
   "dependencies": {
@@ -14,5 +15,11 @@
     "jsonwebtoken": "^9.0.2",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "chai": "^4.5.0",
+    "mocha": "^12.0.2",
+    "mochawesome": "^8.1.1",
+    "supertest": "^7.3.0"
   }
 }
