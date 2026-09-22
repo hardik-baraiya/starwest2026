@@ -1,2 +1,3 @@
 node_modules/
 test/pathCoverage/mochawesome-report/
+test/jmeterTesting/results/
