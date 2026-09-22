@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: E-commerce Checkout API
+  description: In-memory REST API for user auth and checkout with cash/credit card payment rules.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+paths:
+  /health:
+    get:
+      summary: Healthcheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  uptime:
+                    type: number
+
+  /register:
+    post:
+      summary: Register a new user
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  username:
+                    type: string
+        '400':
+          description: Missing username or password
+        '409':
+          description: Username already exists
+
+  /login:
+    post:
+      summary: Login and receive a JWT token
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '400':
+          description: Missing username or password
+        '401':
+          description: Invalid credentials
+
+  /checkout:
+    post:
+      summary: Checkout with cash or credit card
+      tags:
+        - Checkout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: Order summary with total and discount applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+        '400':
+          description: Invalid payment method, items, or quantity
+        '401':
+          description: Missing/invalid token
+        '404':
+          description: Product not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Credentials:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: alice
+        password:
+          type: string
+          example: alice123
+    CheckoutRequest:
+      type: object
+      required:
+        - items
+        - paymentMethod
+      properties:
+        paymentMethod:
+          type: string
+          enum: [cash, credit card]
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                type: integer
+                example: 1
+              quantity:
+                type: integer
+                example: 2
+    CheckoutResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              name:
+                type: string
+              unitPrice:
+                type: number
+              quantity:
+                type: integer
+              subtotal:
+                type: number
+        paymentMethod:
+          type: string
+        subtotal:
+          type: number
+        discount:
+          type: number
+        total:
+          type: number
