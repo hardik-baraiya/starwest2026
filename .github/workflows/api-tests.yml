@@ -1,0 +1,59 @@
+name: API Test Automation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    env:
+      PORT: 3000
+      HEALTH_URL: http://localhost:3000/api/health
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start API in background
+        run: nohup npm start > api.log 2>&1 &
+
+      - name: Wait for API health check
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf "$HEALTH_URL" | grep -q '"status":"ok"'; then
+              echo "API is up and healthy"
+              exit 0
+            fi
+            echo "Waiting for API... ($i/30)"
+            sleep 2
+          done
+          echo "API did not become healthy in time"
+          cat api.log
+          exit 1
+
+      - name: Run API tests
+        run: npm test
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mochawesome-report
+          path: test/pathCoverage/mochawesome-report/
+          if-no-files-found: ignore
+
+      - name: Show API logs
+        if: failure()
+        run: cat api.log || true
